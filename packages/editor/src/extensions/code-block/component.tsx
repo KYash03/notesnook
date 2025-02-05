@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 import { Flex, Input, Text } from "@theme-ui/components";
-import { useRef, useState } from "react";
+import { useRef, useState, useCallback } from "react";
 import { Button } from "../../components/button.js";
 import { ResponsivePresenter } from "../../components/responsive/index.js";
 import { useTimer } from "../../hooks/use-timer.js";
@@ -236,6 +236,20 @@ type LanguageSelectorProps = {
 function LanguageSelector(props: LanguageSelectorProps) {
   const { onLanguageSelected, selectedLanguage, onClose } = props;
   const [languages, setLanguages] = useState(Languages);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const onKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "Enter" && languages.length > 0) {
+        onLanguageSelected(languages[0].filename);
+        e.preventDefault();
+      } else if (e.key === "Escape") {
+        onClose();
+        e.preventDefault();
+      }
+    },
+    [languages, onLanguageSelected, onClose]
+  );
 
   return (
     <Popup onClose={onClose}>
@@ -258,9 +272,15 @@ function LanguageSelector(props: LanguageSelectorProps) {
             zIndex: 999,
             mt: 1
           }}
+          value={searchQuery}
+          onKeyDown={onKeyDown}
           onChange={(e) => {
-            if (!e.target.value) return setLanguages(Languages);
             const query = e.target.value.toLowerCase();
+            setSearchQuery(query);
+            if (!query) {
+              setLanguages(Languages);
+              return;
+            }
             setLanguages(
               Languages.filter((lang) => {
                 return (
